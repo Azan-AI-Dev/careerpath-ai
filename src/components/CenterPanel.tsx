@@ -1,222 +1,345 @@
-import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { JobCard } from "@/components/JobCard";
-import { HitLBlock } from "@/components/HitLBlock";
-import { Paperclip, ArrowUp, Target, Bot, User } from "lucide-react";
+import { useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Paperclip, ArrowUp, Mic, CheckCircle, RefreshCw, Pencil, Send, Save, XCircle, Shield, FileText, Code, Users, Laptop } from "lucide-react";
+import { JobCard } from "@/components/JobCard";
 
-const jobListings = [
+const JOB_CARDS = [
   {
-    company: "Google",
-    title: "Sr. UI Engineer",
-    location: "New York, NY",
-    salary: "$180k–$230k",
-    matchScore: 92,
-    logoInitials: "G",
-    logoColor: "#4285F4",
+    company: "Stripe", title: "Staff UI Engineer — Design Systems",
+    location: "San Francisco, CA (Remote OK)", salary: "$185,000 — $225,000", type: "Full-time",
+    matchScore: 94, logoInitial: "S", logoBg: "#EDE9FE", logoText: "#7C3AED",
+    ringColor: "hsl(349 89% 60%)",
+    reasons: [
+      "Your 6 years of React/Next.js directly matches their core tech stack requirement.",
+      "Payment gateway optimization project at TechCorp aligns with Stripe's product domain.",
+      "Leadership experience managing 4-person frontend team matches Staff-level expectations.",
+    ],
   },
   {
-    company: "Meta",
-    title: "Senior Frontend Engineer",
-    location: "New York, NY",
-    salary: "$170k–$210k",
-    matchScore: 88,
-    logoInitials: "M",
-    logoColor: "#0866FF",
+    company: "Vercel", title: "Senior Frontend Developer — DX Team",
+    location: "New York, NY (Hybrid)", salary: "$165,000 — $195,000", type: "Full-time",
+    matchScore: 88, logoInitial: "V", logoBg: "#000000", logoText: "#FFFFFF",
+    ringColor: "hsl(350 94% 72%)",
+    reasons: [
+      "Deep Next.js expertise is their primary requirement — near-perfect alignment.",
+      "Open-source contributions to React ecosystem noted in your GitHub profile.",
+      "Minor gap: They prefer WebGL/Canvas experience which isn't highlighted in your CV.",
+    ],
   },
   {
-    company: "Spotify",
-    title: "React Engineer — Design Sys.",
-    location: "New York, NY",
-    salary: "$155k–$195k",
-    matchScore: 79,
-    logoInitials: "S",
-    logoColor: "#1DB954",
+    company: "Airbnb", title: "Frontend Engineer III — Guest Experience",
+    location: "Remote (US-based)", salary: "$170,000 — $200,000", type: "Full-time",
+    matchScore: 82, logoInitial: "A", logoBg: "#FFE4E6", logoText: "#E11D48",
+    ringColor: "hsl(38 92% 50%)",
+    reasons: [
+      "Strong React foundation matches their requirements well.",
+      "E-commerce checkout optimization experience translates to booking conversion flows.",
+      "Gap: Heavy GraphQL usage required — not prominently featured in your current CV.",
+    ],
   },
 ];
 
-type Message = {
-  id: string;
-  role: "user" | "agent";
-  content: React.ReactNode;
-};
-
-const initialMessages: Message[] = [
-  {
-    id: "1",
-    role: "user",
-    content: "Find me React developer roles in New York and apply to the best matches.",
-  },
-  {
-    id: "2",
-    role: "agent",
-    content: (
-      <div className="space-y-3">
-        <p className="text-sm text-foreground font-sans leading-relaxed">
-          I scanned <span className="font-semibold">Indeed</span> and <span className="font-semibold">LinkedIn</span> and found{" "}
-          <span className="font-semibold text-primary">43 roles</span> matching your profile. Here are the top 3 matches scored against{" "}
-          <span className="font-mono text-[11px] bg-secondary px-1.5 py-0.5 rounded text-foreground">Base_CV.pdf</span>:
-        </p>
-        <div className="space-y-2">
-          {jobListings.map((job, i) => (
-            <JobCard key={job.company} {...job} delay={i} />
-          ))}
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: "3",
-    role: "agent",
-    content: (
-      <div className="space-y-1">
-        <p className="text-sm text-foreground font-sans leading-relaxed">
-          I've tailored your CV for{" "}
-          <span className="font-semibold text-primary">Google — Sr. UI Engineer</span>. I located the Hiring Manager's contact:{" "}
-          <a
-            href="mailto:sarah.hr@google.com"
-            className="font-mono text-[11px] text-primary hover:underline bg-accent px-1.5 py-0.5 rounded"
-          >
-            sarah.hr@google.com
-          </a>
-          . Please review the tailored CV and cover letter below before I proceed.
-        </p>
-      </div>
-    ),
-  },
-  {
-    id: "4",
-    role: "agent",
-    content: <HitLBlock />,
-  },
-];
-
-function UserBubble({ children }: { children: React.ReactNode }) {
+function AgentAvatar() {
   return (
-    <motion.div
-      className="flex items-end gap-2.5 justify-end"
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-    >
-      <div className="max-w-[80%] bg-card border border-border rounded-2xl rounded-br-sm px-4 py-3 shadow-card">
-        <p className="text-sm text-foreground font-sans leading-relaxed">{children}</p>
-      </div>
-      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-        <User size={13} className="text-muted-foreground" />
-      </div>
-    </motion.div>
+    <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
+      <span className="text-[10px] font-bold text-primary font-sans">CA</span>
+    </div>
   );
 }
 
-function AgentBubble({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+function AgentLabel({ time }: { time: string }) {
   return (
-    <motion.div
-      className="flex items-start gap-2.5"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.35, delay, ease: "easeOut" }}
-    >
-      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <Bot size={13} className="text-primary" />
+    <div className="flex items-center gap-2 mb-1.5">
+      <AgentAvatar />
+      <span className="text-[11px] text-primary font-sans">CareerAgent · {time}</span>
+    </div>
+  );
+}
+
+function UserLabel({ time }: { time: string }) {
+  return (
+    <p className="text-[11px] text-slate-400 font-sans text-right mb-1.5">You · {time}</p>
+  );
+}
+
+function UserBubble({ children, time }: { children: React.ReactNode; time: string }) {
+  return (
+    <div className="ml-auto max-w-[65%]">
+      <UserLabel time={time} />
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-br-sm px-5 py-4 shadow-sm">
+        <p className="text-[15px] text-slate-900 font-sans leading-relaxed">{children}</p>
       </div>
-      <div className="flex-1 max-w-[90%]">{children}</div>
-    </motion.div>
+    </div>
+  );
+}
+
+function AgentBubble({ children, time }: { children: React.ReactNode; time: string }) {
+  return (
+    <div className="max-w-[75%]">
+      <AgentLabel time={time} />
+      <div className="bg-white border border-slate-100 border-l-[3px] border-l-rose-300 rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-sm px-5 py-4 shadow-md">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function AgentWideCard({ children, time }: { children: React.ReactNode; time: string }) {
+  return (
+    <div className="max-w-[90%]">
+      <AgentLabel time={time} />
+      <div className="bg-white border border-slate-100 border-l-[3px] border-l-rose-300 rounded-tr-2xl rounded-br-2xl rounded-bl-2xl rounded-tl-sm px-5 py-5 shadow-md">
+        {children}
+      </div>
+    </div>
   );
 }
 
 export function CenterPanel() {
-  const [inputValue, setInputValue] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 2500);
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 500);
   }, []);
 
   return (
-    <main className="flex flex-col h-full w-full bg-background overflow-hidden">
-      {/* Top Goal Bar */}
-      <motion.div
-        className="flex items-center justify-between px-6 py-3.5 border-b border-border bg-card/80 backdrop-blur-sm flex-shrink-0"
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent border border-primary/20">
-            <Target size={13} className="text-primary" />
-            <span className="text-xs font-semibold text-primary font-sans">
-              Goal: Secure Sr. Frontend Role
-            </span>
+    <main className="flex flex-col h-full bg-white">
+      {/* Chat Messages */}
+      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-6">
+        {/* MSG 1 — User */}
+        <UserBubble time="10:00 AM">
+          Find me Senior Frontend Engineering roles (React/Next.js) in New York or Remote. My target salary is $160k+.
+          Use my uploaded resume. For the best match, tailor my CV, find the hiring manager's email, draft a cold email,
+          and send it via my connected Gmail.
+        </UserBubble>
+
+        {/* MSG 2 — Agent text */}
+        <AgentBubble time="10:00 AM">
+          <p className="text-[15px] text-slate-900 font-sans leading-relaxed">
+            🎯 Got it. I'm launching a multi-agent search across LinkedIn, Indeed, and Glassdoor. I'll match results against your uploaded resume, score them, and present the top candidates. This should take about 30 seconds.
+          </p>
+          <p className="text-xs italic text-slate-400 font-sans mt-2">⏳ Scanning 3 platforms...</p>
+        </AgentBubble>
+
+        {/* MSG 3 — Job Results */}
+        <AgentWideCard time="10:00 AM">
+          <h3 className="text-lg font-semibold text-foreground font-sans">🔍 Top Matches Found</h3>
+          <p className="text-sm text-slate-500 font-sans mt-1">
+            Scanned 142 listings across LinkedIn, Indeed, and Glassdoor. Here are your top 3 matches:
+          </p>
+          <div className="space-y-3 mt-4">
+            {JOB_CARDS.map((job) => (
+              <JobCard key={job.company} {...job} />
+            ))}
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary border border-border">
-            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            <span className="text-[10px] font-medium text-muted-foreground font-sans">In Progress</span>
+        </AgentWideCard>
+
+        {/* MSG 4 — User */}
+        <UserBubble time="10:00 AM">
+          Stripe looks perfect. Go ahead — tailor my resume for that role and prepare the outreach email.
+        </UserBubble>
+
+        {/* MSG 5 — Agent text */}
+        <AgentBubble time="10:00 AM">
+          <p className="text-[15px] text-slate-900 font-sans leading-relaxed">
+            Excellent choice — Stripe is your strongest match at 94%. I'm now:
+          </p>
+          <ol className="list-decimal pl-5 mt-2 space-y-1 text-[15px] text-slate-900 font-sans leading-relaxed">
+            <li>Analyzing the Stripe JD for key requirements</li>
+            <li>Rewriting your CV to highlight relevant experience</li>
+            <li>Finding the hiring manager's contact via Hunter.io</li>
+            <li>Drafting a personalized cold email</li>
+          </ol>
+          <p className="text-[15px] text-slate-900 font-sans leading-relaxed mt-2">
+            I'll pause before sending anything so you can review everything first.
+          </p>
+        </AgentBubble>
+
+        {/* MSG 6 — CV Diff */}
+        <AgentWideCard time="10:00 AM">
+          <h3 className="text-base font-semibold text-foreground font-sans">✍️ Resume Tailored for Stripe — Staff UI Engineer</h3>
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 font-sans mb-2">Current</p>
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2">
+                <p className="text-[13px] text-slate-400 font-sans line-through">• Built frontend features using React and JavaScript.</p>
+                <p className="text-[13px] text-slate-400 font-sans line-through">• Managed a small team of developers.</p>
+                <p className="text-[13px] text-slate-400 font-sans line-through">• Worked on payment integrations.</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-primary font-sans mb-2">Optimized</p>
+              <div className="bg-white border border-rose-200 border-l-[3px] border-l-rose-400 rounded-lg p-4 space-y-2">
+                <p className="text-[13px] text-slate-800 font-sans"><span className="bg-green-50 px-0.5 rounded">• Architected Next.js 14 design system serving 2M+ daily users, reducing LCP by 42%.</span></p>
+                <p className="text-[13px] text-slate-800 font-sans"><span className="bg-green-50 px-0.5 rounded">• Led cross-functional frontend team of 4 engineers, shipping 12 features in Q3 2024.</span></p>
+                <p className="text-[13px] text-slate-800 font-sans"><span className="bg-green-50 px-0.5 rounded">• Engineered PCI-compliant payment flow optimization, increasing conversion rate by 18%.</span></p>
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-3">
+            <span className="text-xs text-slate-600 bg-slate-50 rounded-full px-3 py-1 font-sans">📝 12 bullets enhanced</span>
+            <span className="text-xs text-slate-600 bg-slate-50 rounded-full px-3 py-1 font-sans">🎯 8 keywords injected</span>
+            <span className="text-xs text-slate-600 bg-slate-50 rounded-full px-3 py-1 font-sans">📊 6 achievements quantified</span>
+          </div>
+          <div className="flex items-center gap-3 mt-4">
+            <button className="flex items-center gap-2 bg-primary text-white text-sm font-semibold font-sans rounded-lg h-10 px-5 hover:bg-rose-700 transition-colors">
+              <CheckCircle size={16} /> Approve Changes
+            </button>
+            <button className="flex items-center gap-2 border border-slate-200 text-slate-700 text-sm font-medium font-sans rounded-lg h-10 px-4 hover:bg-slate-50 transition-colors">
+              <Pencil size={14} /> Edit Manually
+            </button>
+            <button className="flex items-center gap-2 text-slate-500 text-sm font-sans hover:text-slate-700 transition-colors">
+              <RefreshCw size={14} /> Regenerate
+            </button>
+          </div>
+        </AgentWideCard>
+
+        {/* MSG 7 — Email Composer */}
+        <AgentWideCard time="10:00 AM">
+          <h3 className="text-base font-semibold text-foreground font-sans">📧 Outreach Email Ready for Review</h3>
+          <p className="text-[13px] text-slate-500 font-sans mt-1">HR Contact found via Hunter.io</p>
+
+          <div className="flex items-center gap-2 mt-3 bg-green-50 border border-green-200 rounded-full px-3 py-1 w-fit">
+            <Shield size={14} className="text-green-600" />
+            <span className="text-[13px] font-medium text-slate-800 font-sans">sarah.baker@stripe.com</span>
+            <span className="text-[11px] text-green-600 font-sans">Verified (97% confidence)</span>
+          </div>
+
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm mt-4 space-y-3">
+            <div className="flex gap-2 text-sm font-sans">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase w-14 flex-shrink-0 pt-0.5">From</span>
+              <span className="text-slate-800">johndoe.careers@gmail.com <span className="text-green-600 text-[11px]">Connected</span></span>
+            </div>
+            <div className="flex gap-2 text-sm font-sans">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase w-14 flex-shrink-0 pt-0.5">To</span>
+              <span className="text-slate-800">sarah.baker@stripe.com <span className="text-green-600 text-[11px]">97% verified</span></span>
+            </div>
+            <div className="flex gap-2 text-sm font-sans">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase w-14 flex-shrink-0 pt-0.5">Subject</span>
+              <input
+                defaultValue="Application: Staff UI Engineer, Design Systems — John Doe | Next.js & React Expert"
+                className="flex-1 text-slate-800 bg-transparent border-none outline-none focus:bg-slate-50 focus:border focus:border-slate-200 rounded px-1 -mx-1 font-sans"
+              />
+            </div>
+            <div className="border-t border-slate-100 my-1" />
+            <textarea
+              className="w-full h-[200px] resize-y text-sm text-slate-800 font-sans leading-6 bg-transparent border-none outline-none focus:border focus:border-slate-200 rounded p-1 -m-1"
+              defaultValue={`Hi Sarah,
+
+I noticed Stripe's recent investment in building a unified design system across the Dashboard — it's something I've been deeply passionate about in my current role at TechCorp.
+
+Over the past 3 years, I've architected a Next.js-based component library serving 2M+ daily active users, reducing page load times by 42% and improving developer velocity by 3x through standardized patterns.
+
+I'd love to bring this experience to Stripe's Design Systems team. I've attached my tailored resume highlighting relevant achievements.
+
+Would you have 15 minutes this week for a quick call?
+
+Best regards,
+John Doe
+linkedin.com/in/johndoe | github.com/johndoe`}
+            />
+            <div className="flex items-center gap-3 bg-rose-50 border border-rose-200 rounded-lg px-4 py-2 w-fit">
+              <FileText size={16} className="text-primary" />
+              <span className="text-[13px] font-medium text-slate-700 font-sans">John_Doe_Stripe_Tailored.pdf</span>
+              <span className="text-[11px] text-slate-400 font-sans">2.4 MB</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 mt-4">
+            <button className="flex items-center gap-2 bg-primary text-white text-sm font-semibold font-sans rounded-lg h-11 px-6 hover:bg-rose-700 hover:shadow-glow-rose transition-all">
+              <Send size={14} /> Send via Gmail
+            </button>
+            <button className="flex items-center gap-2 border border-slate-200 text-slate-700 text-sm font-medium font-sans rounded-lg h-11 px-4 hover:bg-slate-50 transition-colors">
+              <Pencil size={14} /> Edit Email
+            </button>
+            <button className="flex items-center gap-2 text-slate-500 text-sm font-sans hover:text-slate-700 transition-colors">
+              <Save size={14} /> Save Draft
+            </button>
+            <button className="flex items-center gap-2 text-red-500 text-sm font-sans hover:text-red-600 transition-colors ml-auto">
+              <XCircle size={14} /> Cancel
+            </button>
+          </div>
+        </AgentWideCard>
+
+        {/* MSG 8 — Success */}
+        <div className="max-w-[75%]">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+            <motion.div
+              initial={{ scale: 1 }}
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 0.3 }}
+            >
+              <CheckCircle size={24} className="text-green-600 flex-shrink-0 mt-0.5" />
+            </motion.div>
+            <div>
+              <p className="text-[15px] font-semibold text-green-700 font-sans">
+                Email sent successfully to sarah.baker@stripe.com
+              </p>
+              <p className="text-[13px] text-green-600/70 font-sans mt-1">
+                Application tracked. You'll be notified of any reply within 7 days.
+              </p>
+              <a href="#" className="text-[13px] text-primary font-sans hover:underline mt-1 inline-block">
+                View in Sent folder →
+              </a>
+            </div>
           </div>
         </div>
-        <span className="text-[11px] text-muted-foreground font-sans">
-          New York, NY · Remote OK
-        </span>
-      </motion.div>
 
-      {/* Chat Feed */}
-      <ScrollArea className="flex-1">
-        <div className="px-6 py-6 space-y-6">
-          {initialMessages.map((msg, i) => (
-            msg.role === "user" ? (
-              <UserBubble key={msg.id}>{msg.content}</UserBubble>
-            ) : (
-              <AgentBubble key={msg.id} delay={i * 0.1}>
-                {msg.id === "2" || msg.id === "4" ? (
-                  msg.content
-                ) : (
-                  <div className="bg-secondary/50 rounded-2xl rounded-tl-sm px-4 py-3 border border-border/50">
-                    {msg.content}
-                  </div>
-                )}
-              </AgentBubble>
-            )
-          ))}
-          <div ref={bottomRef} />
-        </div>
-      </ScrollArea>
-
-      {/* Input Box */}
-      <div className="px-6 pb-5 pt-3 flex-shrink-0">
-        <motion.div
-          className="flex items-center gap-3 bg-card rounded-2xl border border-border shadow-elevated px-4 py-3 focus-within:border-primary/40 focus-within:shadow-rose transition-all duration-300"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-        >
-          <button className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-secondary flex-shrink-0">
-            <Paperclip size={17} />
+        {/* MSG 9 — Interview Prep */}
+        <AgentWideCard time="10:01 AM">
+          <h3 className="text-base font-semibold text-foreground font-sans">🎤 Ready to prepare for the Stripe interview?</h3>
+          <p className="text-sm text-slate-500 font-sans mt-1">I can simulate interview rounds based on Stripe's known patterns.</p>
+          <div className="grid grid-cols-3 gap-3 mt-4">
+            {[
+              { icon: <Code size={24} className="text-slate-600" />, title: "Technical Screen", sub: "React & System Design", dur: "~45 min" },
+              { icon: <Users size={24} className="text-slate-600" />, title: "Behavioral Round", sub: "Leadership & Collaboration", dur: "~30 min" },
+              { icon: <Laptop size={24} className="text-slate-600" />, title: "Take-Home Prep", sub: "Challenge Practice", dur: "~2 hours" },
+            ].map((opt) => (
+              <div key={opt.title} className="bg-white border border-slate-200 rounded-lg p-4 text-center hover:border-rose-200 hover:shadow-sm hover:bg-rose-50/30 transition-all cursor-pointer">
+                <div className="flex justify-center mb-2">{opt.icon}</div>
+                <p className="text-sm font-semibold text-foreground font-sans">{opt.title}</p>
+                <p className="text-xs text-slate-500 font-sans">{opt.sub}</p>
+                <p className="text-[11px] text-slate-400 font-sans mt-1">{opt.dur}</p>
+              </div>
+            ))}
+          </div>
+          <button className="w-full mt-3 h-10 border border-primary text-primary rounded-lg text-sm font-semibold font-sans hover:bg-primary hover:text-white transition-all">
+            Start Mock Interview
           </button>
+        </AgentWideCard>
+
+        {/* MSG 10 — Agent text */}
+        <AgentBubble time="10:01 AM">
+          <p className="text-[15px] text-slate-900 font-sans leading-relaxed">
+            Your Stripe application is now live! Here's what's happening next:
+          </p>
+          <ul className="mt-2 space-y-1 text-[15px] text-slate-900 font-sans leading-relaxed">
+            <li>• 📬 Monitoring sarah.baker@stripe.com for replies (7-day window)</li>
+            <li>• 📊 Your pipeline: 1 Active, 2 Ready to Apply</li>
+            <li>• 💡 Tip: Want me to proceed with Vercel (88% match) while we wait?</li>
+          </ul>
+        </AgentBubble>
+
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="px-8 py-4 border-t border-slate-100 bg-white flex-shrink-0">
+        <motion.div
+          layoutId="main-input"
+          className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl shadow-sm flex items-center px-5 gap-3 focus-within:border-rose-400 focus-within:ring-2 focus-within:ring-rose-100 focus-within:bg-white transition-all"
+        >
+          <Paperclip size={18} className="text-slate-400 hover:text-slate-600 cursor-pointer transition-colors flex-shrink-0" />
+          <Mic size={18} className="text-slate-400 hover:text-slate-600 cursor-pointer transition-colors flex-shrink-0" />
           <input
             type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Give me a new goal, or ask me anything…"
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none font-sans"
+            placeholder="Follow up, ask questions, or give instructions..."
+            className="flex-1 bg-transparent text-sm text-foreground font-sans placeholder:text-slate-400 outline-none caret-primary"
           />
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
-            <Button
-              size="icon"
-              className={`w-8 h-8 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-rose flex-shrink-0 transition-all duration-200 ${
-                !inputValue ? "opacity-50" : "opacity-100"
-              }`}
-              disabled={!inputValue}
-            >
-              <ArrowUp size={15} />
-            </Button>
-          </motion.div>
+          <button className="w-10 h-10 rounded-full bg-primary flex items-center justify-center hover:bg-rose-700 hover:scale-105 active:scale-95 transition-all flex-shrink-0">
+            <ArrowUp size={18} className="text-white" />
+          </button>
         </motion.div>
-        <p className="text-center text-[10px] text-muted-foreground mt-2 font-sans">
-          CareerAgent can make mistakes. Review all applications before approving.
-        </p>
       </div>
     </main>
   );
