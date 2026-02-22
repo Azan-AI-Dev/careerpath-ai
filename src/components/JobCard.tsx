@@ -1,100 +1,103 @@
 import { useEffect, useState } from "react";
-import { MapPin, DollarSign, ExternalLink } from "lucide-react";
-import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 
 interface JobCardProps {
   company: string;
   title: string;
   location: string;
   salary: string;
+  type: string;
   matchScore: number;
-  logoInitials: string;
-  logoColor: string;
-  delay?: number;
+  logoInitial: string;
+  logoBg: string;
+  logoText: string;
+  reasons: string[];
+  ringColor?: string;
 }
 
-function MatchRing({ score, delay = 0 }: { score: number; delay?: number }) {
+function MatchRing({ score, color = "hsl(350 94% 72%)" }: { score: number; color?: string }) {
   const [animated, setAnimated] = useState(false);
-  const radius = 20;
+  const radius = 22;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (animated ? score / 100 : 0) * circumference;
+  const offset = circumference - (animated ? score / 100 : 0) * circumference;
 
   useEffect(() => {
-    const t = setTimeout(() => setAnimated(true), delay * 1000 + 300);
+    const t = setTimeout(() => setAnimated(true), 400);
     return () => clearTimeout(t);
-  }, [delay]);
-
-  const color = score >= 90 ? "#BE123C" : score >= 80 ? "#E11D48" : "#f43f5e";
+  }, []);
 
   return (
-    <div className="relative w-12 h-12 flex-shrink-0">
-      <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
+    <div className="relative w-[52px] h-[52px] flex-shrink-0">
+      <svg className="w-[52px] h-[52px] -rotate-90" viewBox="0 0 52 52">
+        <circle cx="26" cy="26" r={radius} fill="none" stroke="hsl(var(--border))" strokeWidth="3" />
         <circle
-          cx="24"
-          cy="24"
-          r={radius}
-          fill="none"
-          stroke="hsl(355 100% 94%)"
-          strokeWidth="3.5"
-        />
-        <circle
-          cx="24"
-          cy="24"
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
+          cx="26" cy="26" r={radius} fill="none"
+          stroke={color} strokeWidth="3" strokeLinecap="round"
+          strokeDasharray={circumference} strokeDashoffset={offset}
           style={{ transition: "stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1)" }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[10px] font-bold text-primary font-sans">{score}%</span>
+        <span className="text-sm font-bold text-primary font-sans">{score}%</span>
       </div>
     </div>
   );
 }
 
-export function JobCard({ company, title, location, salary, matchScore, logoInitials, logoColor, delay = 0 }: JobCardProps) {
+export function JobCard({
+  company, title, location, salary, type, matchScore, logoInitial, logoBg, logoText, reasons, ringColor,
+}: JobCardProps) {
   return (
-    <motion.div
-      className="flex items-center gap-3 p-3.5 rounded-xl bg-card border border-border/60 shadow-card hover:shadow-elevated hover:border-border transition-all duration-300 cursor-pointer group"
-      initial={{ opacity: 0, x: -12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: delay * 0.15 + 0.2, duration: 0.4 }}
-      whileHover={{ scale: 1.005 }}
-    >
-      {/* Company Logo */}
-      <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-white text-sm font-bold font-sans"
-        style={{ backgroundColor: logoColor }}
-      >
-        {logoInitials}
-      </div>
-
-      {/* Job Info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-foreground truncate font-sans group-hover:text-primary transition-colors">
-          {title}
-        </p>
-        <p className="text-xs text-muted-foreground font-medium font-sans">{company}</p>
-        <div className="flex items-center gap-3 mt-1">
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground font-sans">
-            <MapPin size={10} /> {location}
-          </span>
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground font-sans">
-            <DollarSign size={10} /> {salary}
-          </span>
+    <div className="bg-white border border-slate-200 rounded-xl p-5 hover:border-rose-200 hover:shadow-md hover:-translate-y-px transition-all duration-200 cursor-pointer">
+      {/* Top row */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold font-sans"
+            style={{ backgroundColor: logoBg, color: logoText }}
+          >
+            {logoInitial}
+          </div>
+          <div>
+            <p className="text-[13px] font-medium text-slate-500 font-sans">{company}</p>
+            <p className="text-base font-semibold text-foreground font-sans">{title}</p>
+            <div className="flex items-center gap-2 mt-1 text-[13px] text-slate-500 font-sans">
+              <span>📍 {location}</span>
+              <span>·</span>
+              <span className="font-medium text-green-600">💰 {salary}</span>
+              <span>·</span>
+              <span>🏢 {type}</span>
+            </div>
+          </div>
         </div>
+        <MatchRing score={matchScore} color={ringColor} />
       </div>
 
-      {/* Match Score Ring */}
-      <div className="flex items-center gap-2">
-        <MatchRing score={matchScore} delay={delay * 0.15} />
-        <ExternalLink size={12} className="text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+      {/* Reasons */}
+      <div className="mt-4">
+        <p className="text-[13px] font-medium text-slate-700 font-sans mb-2">Why you match:</p>
+        <ul className="space-y-1">
+          {reasons.map((r, i) => (
+            <li key={i} className="text-[13px] text-slate-600 font-sans pl-4 relative before:content-['•'] before:absolute before:left-0 before:text-primary">
+              {r}
+            </li>
+          ))}
+        </ul>
       </div>
-    </motion.div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-3 mt-4">
+        <button className="text-[13px] font-medium text-slate-500 hover:bg-slate-100 px-3 py-1.5 rounded-lg transition-colors font-sans">
+          Skip
+        </button>
+        <button className="text-[13px] font-medium text-slate-700 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors font-sans">
+          View Details
+        </button>
+        <button className="text-[13px] font-semibold text-white bg-primary px-4 py-1.5 rounded-lg hover:bg-rose-700 hover:shadow-sm transition-all font-sans flex items-center gap-1.5 ml-auto">
+          <Star size={14} />
+          Tailor CV & Apply
+        </button>
+      </div>
+    </div>
   );
 }
