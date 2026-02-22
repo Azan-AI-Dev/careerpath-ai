@@ -1,67 +1,61 @@
 
-## CareerAgent — Multi-Agent Job-Seeking Assistant UI
 
-A stunning, light-mode-only, 3-column frontend UI that looks and feels like a premium AI product. Built with React + Tailwind CSS + Framer Motion. No backend required now — all data is hardcoded and architected so real API calls can be swapped in later.
+## Phase 1: Welcome Screen and State Machine
 
----
-
-### 🎨 Design System Setup
-- Import `DM Sans` and `Libre Baskerville` from Google Fonts via `index.html`
-- Extend Tailwind config with a `rose` accent palette and custom shadow tokens
-- Set the global background to pure white, body font to `DM Sans`
-- All component depth achieved via soft shadows and spacing — zero harsh black borders
+This phase replaces the current direct-to-workspace layout with a beautiful welcome screen that transitions into the workspace when the user submits their first message.
 
 ---
 
-### 🗂️ Left Sidebar — "Control Tower" (20% width)
-- **Brand header:** "CareerAgent" in `Libre Baskerville`, with a rose-red dot/accent
-- **Budget & Constraints section:** Three sliders with numeric readouts:
-  - Max API Spend (e.g. $12.50 / $50.00)
-  - Job Search Radius (e.g. 25 miles)
-  - Min Expected Salary (e.g. $120,000)
-- **Knowledge Base section:** Shows connected sources with status badges:
-  - ✅ Google Drive — "Resumes" folder linked
-  - ✅ Base_CV.pdf — Uploaded (3 days ago)
-  - ➕ "Connect Source" button (outlined, subtle)
-- Light gray `#F9FAFB` background, right-side border separator
+### Overview
+
+The app will use a state machine (`welcome` -> `transitioning` -> `workspace`) managed in the Index page. On first load, users see a full-screen welcome screen with animated branding, a central input box, and suggestion pills. On submit, everything animates out and the existing 3-column workspace appears.
 
 ---
 
-### 💬 Center Panel — "Human-Agent Interaction" (50% width)
-- **Top bar:** Pill-shaped goal status chip — "🎯 Goal: Secure Sr. Frontend Role" with a subtle rose badge
-- **Chat feed** (scrollable):
-  1. **User bubble** — Right-aligned, clean white card: *"Find me React developer roles in New York and apply to the best matches."*
-  2. **Agent response** — Left-aligned: Text intro + **3 Job Cards** rendered as beautiful horizontal cards with:
-     - Company logo placeholder, job title, company, location, salary
-     - A circular "Match Score" ring in rose-red (92%, 88%, 79%)
-  3. **Agent action message** — "I have tailored your CV for Google — Sr. UI Engineer. Hiring Manager found: sarah.hr@google.com"
-  4. **HitL Block (Human-in-the-Loop):** An elevated inline card with:
-     - A scrollable full document viewer showing the tailored CV (realistic bullet points, sections)
-     - Below the CV, a rendered Cover Letter preview
-     - Primary rose-red CTA: **"Approve & Send Email via Gmail"**
-     - Secondary: **"Edit CV"** (outlined button)
-- **Input box** (anchored bottom): Floating, soft-rounded rectangle, slight shadow elevation. Paperclip icon left, rose-red arrow/send button right. Placeholder: *"Give me a new goal, or ask me anything..."*
+### Changes
+
+**1. Update `index.html`**
+- Add JetBrains Mono to the Google Fonts link (alongside existing DM Sans and Libre Baskerville)
+
+**2. Update `tailwind.config.ts`**
+- Add `fontFamily` config: sans (DM Sans), serif (Libre Baskerville), mono (JetBrains Mono)
+- Add custom `boxShadow`: `float` and `glow-rose`
+- Add custom `animation`/`keyframes`: `float`, `drift`, `drift-reverse`
+
+**3. Update `src/index.css`**
+- Add custom scrollbar styles (thin 5px, slate-colored thumb)
+- Add `::selection` style (rose-tinted)
+- Add `@keyframes drift` and `drift-reverse` for ambient blobs
+- Remove focus outlines globally (custom ones used instead)
+
+**4. Create `src/components/WelcomeScreen.tsx`** (new file)
+The main welcome screen component containing:
+- **Ambient blobs**: Two large, faint, blurred circles (rose-50 and slate-100) with drift animations
+- **Floating brand logo**: "CareerAgent" in Libre Baskerville, "Career" black + "Agent" rose-600, with continuous float animation and subtitle "AI-POWERED JOB ASSISTANT"
+- **Greeting text**: "What role are you chasing today?" with word-by-word stagger animation (blur + fade + slide)
+- **Subtitle**: Descriptive text fading in after greeting
+- **Central input box**: 680px wide, 64px tall, rounded-[20px], with shadow-float, paperclip icon, rose-600 circular submit button. Has `layoutId="main-input"` for future Phase 2 shared layout animation. Auto-focuses after animations complete
+- **Suggestion pills**: 4 clickable pills that fill the input and auto-submit on click, with staggered entry animation
+- **Footer**: "Powered by LangGraph . LangSmith . OpenAI" pinned to bottom
+
+Props: `onSubmit(message: string)` callback
+
+**5. Update `src/pages/Index.tsx`**
+- Add state machine: `appState` (`welcome` | `transitioning` | `workspace`), `firstMessage`
+- When `appState === 'welcome'`: render `<WelcomeScreen onSubmit={...} />`
+- On submit: store message, set state to `transitioning`, trigger exit animations, then after 1200ms set state to `workspace`
+- When `appState === 'transitioning'`: render the welcome screen with exit animations (elements fade/blur out in reverse stagger order, input box remains)
+- When `appState === 'workspace'`: render the existing 3-column layout (LeftSidebar, CenterPanel, RightSidebar)
 
 ---
 
-### 🧠 Right Sidebar — "Agent Observability / Think Aloud" (30% width)
-- **Always visible** — pure white background, inner cards slightly elevated
-- **Header:** "Agent Brain" title with a pulsing green "LIVE" dot
-- **Timeline feed:** Logs animate in one-by-one with a staggered Framer Motion reveal on page load (simulating a live feed), then a cursor-blinking effect on the last active log:
-  - `[09:41:02] 🟢 Orchestrator:` Received objective. Decomposing tasks...
-  - `[09:41:05] 🔄 JobScraper Agent:` Connecting to LinkedIn API... [Fetched 43 listings]
-  - `[09:41:12] 🧠 Evaluator Agent:` Running vector similarity match: JD vs Base_CV
-  - `[09:41:18] ✍️ ResumeTailor Agent:` Modified bullet points for Next.js; generated Google_CV_Tailored.pdf
-  - `[09:41:25] 🔍 OSINT Agent:` Scraped Google HR contact → sarah.hr@google.com
-  - `[09:41:26] ⏸️ HandOff:` **PAUSED** — Awaiting Human-in-the-Loop approval (rose-red highlighted status pill)
-- Each log entry is a subtle card with timestamp, agent icon, message, and a colored status dot
+### Technical Details
 
----
+- All animations use framer-motion (`motion.div` with `initial`, `animate`, `exit` variants and `AnimatePresence`)
+- The input box uses `layoutId="main-input"` so it can be animated to the workspace position in Phase 2
+- Suggestion pill click: sets input value to pill text (minus emoji), then calls the submit handler
+- Submit button disabled state: `bg-slate-100` with `slate-300` icon when input is empty
+- Focus-within state on input container: `border-rose-500` + `ring` glow effect
+- No dark mode classes anywhere
+- All colors strictly from the approved palette
 
-### ✨ Micro-interactions & Polish
-- Chat bubbles fade+slide in with Framer Motion on mount
-- Job Match Score rings animate from 0 to value on load
-- Observability logs stagger in with a 400ms delay between each
-- Sidebar sliders have smooth thumb drag animations
-- All buttons have `scale(1.01)` hover + color transition
-- "Approve & Send" button has a subtle shimmer/pulse to draw attention
