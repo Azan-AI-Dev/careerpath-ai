@@ -78,9 +78,43 @@
   h1, h2 {
     font-family: 'Libre Baskerville', 'Noto Serif', serif;
   }
+
+  *:focus {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: hsl(355 100% 94%);
+    color: hsl(347 90% 45%);
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(213 27% 84%);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(215 16% 47%);
+  }
 }
 
 @layer utilities {
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(30px, -20px); }
+  }
+
+  @keyframes drift-reverse {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-25px, 15px); }
+  }
+
   .font-serif {
     font-family: 'Libre Baskerville', 'Noto Serif', serif;
   }
